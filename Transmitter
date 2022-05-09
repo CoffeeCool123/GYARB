@@ -8,11 +8,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);   /////////////////////////////////////////////////OLED 
+Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
-// OLED FeatherWing buttons map to different pins.
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////button
 #if defined(ESP32)
   #define BUTTON_A 15
   #define BUTTON_B 32
@@ -20,48 +17,20 @@ Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);   /////////////////
 
 #endif
 
-
   int n = 0;
 
 uint8_t broadcastAddress[] = {0x30, 0xAE, 0xA4, 0x14, 0x22, 0x0C};
 
-
-
 typedef struct struct_message {
   char a[32];
-  int b;
-  float c;
-  bool d;
 } struct_message;
 
-// Create a struct_message called myData
 struct_message myData;
 
-// callback when data is sent
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   Serial.print("\r\nLast Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
 }
-
-
-
-
-
-
-#if (defined(AVR) || defined(ESP8266)) && !defined(AVR_ATmega2560)
-// For UNO and others without hardware serial, we must use software serial...
-// pin #2 is IN from sensor (GREEN wire)
-// pin #3 is OUT from arduino  (WHITE wire)
-// Set up the serial port to use softwareserial..
-SoftwareSerial mySerial(2, 3);
-
-#else
-// On Leonardo/M0/etc, others with hardware serial, use hardware serial!
-// #0 is green wire, #1 is white
-#define mySerial Serial1
-
-#endif
-
 
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
@@ -77,19 +46,15 @@ void setup()
       display.display();
   delay(1000);
 
-  // Clear the buffer.
   display.clearDisplay();
   display.display();
 
   Serial.println("IO test");
 
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////button
   pinMode(BUTTON_A, INPUT_PULLUP);
   pinMode(BUTTON_B, INPUT_PULLUP);
   pinMode(BUTTON_C, INPUT_PULLUP);
-
-  // text display tests
+  
   display.clearDisplay();
      display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
@@ -103,9 +68,7 @@ void setup()
   display.print("enter valid finger");
 
 
-  display.display(); // actually display all of the above
-
-
+  display.display();
 
     WiFi.mode(WIFI_STA);
 
@@ -117,7 +80,6 @@ void setup()
 
  esp_now_register_send_cb(OnDataSent);
   
-  // Register peer
   esp_now_peer_info_t peerInfo;
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
   peerInfo.channel = 0;  
@@ -135,7 +97,6 @@ void setup()
   delay(100);
   Serial.println("\n\nAdafruit finger detect test");
 
-  // set the data rate for the sensor serial port
   finger.begin(57600);
   delay(5);
   if (finger.verifyPassword()) {
@@ -166,10 +127,9 @@ void setup()
   }
 }
 
-void loop()                     // run over and over again
+void loop()              
 {
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////button
  if(!digitalRead(BUTTON_A)){
   
 n++;
@@ -238,7 +198,6 @@ uint8_t getFingerprintEnroll() {
     display.setCursor(0,0);
   display.print("Enrolling");
   while (p != FINGERPRINT_OK) {
-    //////////////////////////////////////////////////////////
     p = finger.getImage();
     switch (p) {
     case FINGERPRINT_OK:
@@ -259,7 +218,6 @@ uint8_t getFingerprintEnroll() {
     }
   }
 
-  // OK success!
 
   p = finger.image2Tz(1);
   switch (p) {
@@ -313,7 +271,6 @@ uint8_t getFingerprintEnroll() {
     }
   }
 
-  // OK success!
 
   p = finger.image2Tz(2);
   switch (p) {
@@ -337,7 +294,6 @@ uint8_t getFingerprintEnroll() {
       return p;
   }
 
-  // OK converted!
   Serial.print("Creating model for #");  Serial.println(id);
 
   p = finger.createModel();
@@ -368,7 +324,6 @@ uint8_t getFingerprintEnroll() {
   }
 
   Serial.print("ID "); Serial.println(id);
-  /////////////////////////////////////////////////////////////////////
   p = finger.storeModel(n);
   if (p == FINGERPRINT_OK) {
     Serial.println("Stored!");
@@ -418,7 +373,6 @@ uint8_t getFingerprintID() {
       return p;
   }
 
-  // OK success!
 
   p = finger.image2Tz();
   switch (p) {
@@ -441,21 +395,9 @@ uint8_t getFingerprintID() {
       Serial.println("Unknown error");
       return p;
   }
-
-  // OK converted!
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
   
   p = finger.fingerSearch();
   if (p == FINGERPRINT_OK) {
-
-
-
-    
-
 
   display.clearDisplay();
      display.setTextSize(1);
@@ -520,13 +462,9 @@ n--;
   display.display();
   }
 
-  
- 
- //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 strcpy(myData.a, "THIS IS A CHAR");
  myData.d = false;
   
-  // Send message via ESP-NOW
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
     display.clearDisplay();
   display.setTextSize(2);
@@ -615,12 +553,6 @@ strcpy(myData.a, "THIS IS A CHAR");
     return p;
   }
 
-
-
-
-
-  // found a match!
-
   display.clearDisplay();
   display.setTextSize(2);
   display.setTextColor(SSD1306_WHITE);
@@ -644,7 +576,6 @@ strcpy(myData.a, "THIS IS A CHAR");
   return finger.fingerID;
 }
 
-// returns -1 if failed, otherwise returns ID #
 int getFingerprintIDez() {
   uint8_t p = finger.getImage();
   if (p != FINGERPRINT_OK)  return -1;
@@ -655,7 +586,6 @@ int getFingerprintIDez() {
   p = finger.fingerFastSearch();
   if (p != FINGERPRINT_OK)  return -1;
 
-  // found a match!
   Serial.print("Found ID #"); Serial.print(finger.fingerID);
   Serial.print(" with confidence of "); Serial.println(finger.confidence);
   return finger.fingerID;
